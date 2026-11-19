@@ -9,8 +9,6 @@ import remarkStringify from 'remark-stringify'
 import { unified } from 'unified'
 
 const chrome = [
-  'script',
-  'template',
   'button',
   'svg',
   'footer',
