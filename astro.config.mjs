@@ -21,6 +21,7 @@ import {
   readApiExports,
 } from './src/lib/api-reference.ts'
 import { readLlmsGuidance } from './src/lib/llms-guidance.mjs'
+import { markdownPages } from './src/lib/markdown-pages.ts'
 
 const siteUrl = 'https://nanostores.net/'
 
@@ -128,6 +129,7 @@ export default defineConfig({
   },
   integrations: [
     sitemap(),
+    markdownPages(),
     starlight({
       title: 'Nano Stores',
       description:
