@@ -63,7 +63,7 @@ function mainContent(tree: Root): Root {
   return { type: 'root', children: main.children }
 }
 
-const toMarkdown = unified()
+export const toMarkdown = unified()
   .use(rehypeParse)
   .use(() => mainContent)
   .use(rehypeRemark)
