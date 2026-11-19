@@ -65,6 +65,12 @@ jobs:
           curl --fail --silent --show-error --head http://127.0.0.1:8000/ | grep -i "^content-security-policy:.*frame-ancestors 'none'"
           curl --silent --head http://127.0.0.1:8000/missing-page | grep -i "^content-security-policy:.*frame-ancestors 'none'"
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8000/missing-page)" = 404
+          curl --fail --silent --show-error --head http://127.0.0.1:8000/ | grep -i '^link: </index.md>; rel="alternate"; type="text/markdown"'
+          curl --fail --silent --show-error --head http://127.0.0.1:8000/docs/getting-started/index.md | grep -i "^content-type: text/markdown"
+          markdown=$(curl --fail --silent --show-error --head --header "Accept: text/markdown" http://127.0.0.1:8000/docs/getting-started/)
+          grep -i "^content-type: text/markdown" <<< "$markdown"
+          grep -i "^vary: accept[[:space:]]*$" <<< "$markdown"
+          curl --fail --silent --show-error --head --header "Accept: text/html, text/markdown;q=0.5" http://127.0.0.1:8000/docs/getting-started/ | grep -i "^content-type: text/html"
       - name: Pack Docker image
         if: github.event_name == 'push' && github.repository == 'nanostores/nanostores.net'
         run: docker save -o image.tar nanostores-site:ci
