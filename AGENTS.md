@@ -32,7 +32,6 @@ Content-Security-Policy: Astro hashes its own inline scripts and styles (`securi
 Decided deliberately; change only by asking:
 
 - Quotes are exact; users' words are never invented.
-- Never attribute a quote to Andrey Sitnik; if one would help, ask the user.
 - Sizes come from `{coreSize}`, never as a number in copy.
 - "Hook-free core API", not "no hooks".
 - No comparison pages.
