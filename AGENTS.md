@@ -1,26 +1,22 @@
 ## Development
 
-`pnpm start` runs the dev server in the terminal; stop it with `Ctrl+C`.
+For interactive development, `pnpm start` runs the dev server in the terminal; stop it with `Ctrl+C`.
 
-When an agent needs the server to keep running after its launch command returns, use background mode:
+When an agent needs a server to keep running after its launch command returns, use background mode:
 
 ```
 pnpm run dev --background --host 0.0.0.0 --port 4321
 ```
 
-Manage it with `pnpm run astro dev stop`, `status` and `logs`. The background launcher has a fixed 30-second startup timeout; to verify a slow start in a container, run `pnpm start` in a managed terminal session instead.
-
-Search and the Content-Security-Policy work only in the production build: run `pnpm run check`, then preview it as described in [QA](docs/qa.md).
+Manage the background server with `pnpm run astro dev stop`, `pnpm run astro dev status`, and `pnpm run astro dev logs`. Astro's background launcher has a fixed 30-second startup timeout. To verify a slow foreground start in a container, run `pnpm start` in a managed terminal session and stop it with `Ctrl+C` afterward.
 
 ## Quality checks
 
-Run `pnpm test` before finishing a change; CI runs the same command. For a narrower loop, run a single `test:*` or `check:*` script from `package.json`. Astro diagnostics and the build must stay sequential: both regenerate the API reference.
+Run `pnpm test` before finishing a change; CI runs the same command. Diagnostics and the build stay sequential because both regenerate the API reference. Size Limit tracks the site's own JS and the search JS (Pagefind UI, `pagefind.js` and its worker) in `dist/` without compression. If a change grows them on purpose, raise the limits in `package.json` and say why. For a narrower loop, run a single `test:*` script or `check`, `check:types`, `check:snippets`, `check:size`. Follow [QA](docs/qa.md) for visible code fragments, documentation export contents, editorial, Starlight CSS, browser, layout and keyboard checks relevant to your change, and report what you actually checked. Output checks do not validate browser layout or focus behavior. Playwright is not a project dependency.
 
-Size Limit tracks the site's own JS and the search JS in `dist/`, uncompressed. If a change grows them on purpose, raise the limits in `package.json` and say why.
+The React rendering test shown on `/why/` is a text-only `*.tsx.txt` example. Review it manually following [QA](docs/qa.md); snippet type and behavior checks cover executable examples.
 
-Automated checks do not cover browser layout, focus or keyboard behavior, and Playwright is not a project dependency. Follow [QA](docs/qa.md) for the manual checks relevant to your change and report what you actually checked. The React rendering test on `/why/` is a text-only `*.tsx.txt` example that is never compiled; review it manually.
-
-Content-Security-Policy: Astro hashes its own inline scripts and styles (`security.csp` in `astro.config.mjs`); nginx sends the rules a meta tag cannot hold. A new `is:inline` script is not hashed by Astro: add its hash to the config from the same source file, as for `ThemeProvider.astro`. `check` catches missing hashes and unlisted hosts for scripts, styles, images and frames, but not `fetch`: requests from JS may go only to the site itself and to Plausible at `https://lens.hplush.dev`.
+Content-Security-Policy: Astro hashes its own inline scripts and styles into each page's meta tag (`security.csp` in `astro.config.mjs`), and nginx sends the header rules that cannot live in a meta tag. A new `is:inline` script is not hashed by Astro: add its hash to the config from the same source file, as for `ThemeProvider.astro`. `check` fails for an inline script or style missing from its page's policy and for an external script, stylesheet, image or frame from a host the policy does not name. Requests from JS (`fetch`) may go only to the site itself and to Plausible at `https://lens.hplush.dev` (`connect-src`); `check` cannot see them. The policy applies only to the built site, not to `dev`.
 
 ## Content
 
@@ -38,12 +34,14 @@ Decided deliberately; change only by asking:
 
 ## Code
 
-New situation: add `src/content/situations/<slug>.md`, snippets in `src/snippets/<slug>/`, one block in `src/components/blocks/`, its entry in `blocks/index.ts`, the section body inline in `src/pages/index.astro`, the id in `src/config/order.ts`. Do not add layout variants, generic section components or new collections. Its `anchors` are the reader's own terms from the snippets (their APIs, or else their stack), not Nano Stores APIs and not repeating `landmarks`.
+New situation: add `src/content/situations/<slug>.md`, snippets in `src/snippets/<slug>/`, one block in `src/components/blocks/`, its entry in `blocks/index.ts`, the section body inline in `src/pages/index.astro`, the id in `src/config/order.ts`. Do not add layout variants, generic section components or new collections. Its `anchors` are the reader's own terms from the snippets (their APIs, or else their stack), not Nano Stores APIs and not repeating `landmarks`; review them when editing the situation following [QA](docs/qa.md).
 
-Docs: handwritten pages live in `src/content/docs/docs/`. Concepts, frameworks, guides, handbook and ecosystem package pages come from upstream READMEs vendored in `src/vendor/`: never edit those files. Update the source repository, then run `pnpm run sync:readme`.
+Docs: handwritten pages live in `src/content/docs/docs/`. Concepts, framework integrations, guides and handbook chapters are imported from the versioned Nano Stores README in `src/vendor/`; ecosystem package pages come from vendored plugin READMEs. Update upstream content in its source repository, then run `pnpm run sync:readme` to refresh the vendored files.
 
-The API reference under `src/content/docs/docs/api/` is generated from `nanostores` types on every `dev`/`build`: never edit or commit it. Fix API wording in TSDoc upstream in `nanostores/nanostores`. Configure `starlight-typedoc` instead of adding custom TypeDoc adapters. Handwritten API links use lowercase anchors (`/docs/api/#onmount`), with `type-` for types (`#type-readableatom`) and `store-` for the everyday methods (`#store-get`).
+The API reference under `src/content/docs/docs/api/` is generated by `starlight-typedoc` on every `dev`/`build` from `nanostores` types — never edit or commit it. Fix API wording in TSDoc upstream in `nanostores/nanostores`. Do not add custom TypeDoc adapters; configure the plugin instead. Handwritten API links use lowercase anchors (`/docs/api/#onmount`), with `type-` for types (`#type-readableatom`) and `store-` for the everyday methods (`#store-get`).
 
-Header: home and docs render the same `HeaderContent`, and only its middle slot (search) may differ between pages. Every header query lives in `src/styles/header.css`, never in components. Slots switch with container queries on the header strip so home and docs switch together; viewport media queries are only for `50rem` (Starlight's menu breakpoint) and `37.5rem`. Docs override Starlight's `Header` and `MobileMenuToggle` and rely on private Starlight selectors: after a Starlight upgrade, follow the header checks in [QA](docs/qa.md), and comment any new private selector with why no public option exists.
+Header: main and docs render the same `HeaderContent` — a strip of paper with three slots: brand (start), search (middle), `SiteNav` (end). Only the middle slot may differ between pages; compare positions on `/` and `/docs/` using [QA](docs/qa.md). Sizes are tokens in `src/styles/tokens.css` and reach Starlight through `--sl-*` in `starlight.css`. Every header query lives in `src/styles/header.css`; components have none. The slots switch with container queries on the strip (`site-header`, its content box), so home and docs switch together: the byline, the nav gap and the search label (`site-header-search`). Viewport media queries remain only for what follows the viewport: `50rem` (Starlight's md: the menu button and the sidebar popover) and `37.5rem` (phone gap). Docs override Starlight's `Header` and `MobileMenuToggle`; the strip is positioned inside Starlight's fixed header, so after a Starlight upgrade follow the header checks in [QA](docs/qa.md). Review private Starlight selectors in `starlight.css` and `header.css` manually following [QA](docs/qa.md) when changing styles or updating Starlight; document any necessary exception with a comment on why no public option exists.
 
-Astro documentation: https://docs.astro.build
+## Documentation
+
+Full documentation: https://docs.astro.build
