@@ -120,15 +120,25 @@ import '../../styles/search.css'
         const target = event.target as Element
         if (target === dialog || target.closest('a[href]')) dialog.close()
         if (target.closest('.pagefind-ui__search-clear')) input()?.focus()
-        if (target.closest('.pagefind-ui__button')) pending = results().length
       })
+      dialog.addEventListener(
+        'click',
+        (event) => {
+          if ((event.target as Element).closest('.pagefind-ui__button')) {
+            pending = results().length
+          }
+        },
+        true,
+      )
       dialog.addEventListener('keydown', (event) => {
         const { key, isComposing, shiftKey, altKey, ctrlKey, metaKey } = event
         if (key !== 'ArrowDown' && key !== 'ArrowUp') return
         if (isComposing || shiftKey || altKey || ctrlKey || metaKey) return
         const items = [
           input(),
-          ...this.querySelectorAll<HTMLElement>('.pagefind-ui__result-link'),
+          ...this.querySelectorAll<HTMLElement>(
+            '.pagefind-ui__result-link, .pagefind-ui__button',
+          ),
         ]
         const index = items.indexOf(document.activeElement as HTMLElement)
         if (index === -1) return
